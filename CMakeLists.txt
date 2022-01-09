@@ -17,7 +17,7 @@ file(GLOB HEADER_FILES_HPP ${CMAKE_SOURCE_DIR}/include/*.hpp)
 
 # include header directories
 include_directories(
-   ${CMAKE_SOURCE_DIR}/include)
+    ${CMAKE_SOURCE_DIR}/include)
 
 # add the main file as executable
-add_executable(run_solver ${CMAKE_SOURCE_DIR}/src/run_solver.cpp ${HEADER_FILES_HPP})
+add_executable(test_ga_solver ${CMAKE_SOURCE_DIR}/test/test_ga_solver.cpp ${HEADER_FILES_HPP})

@@ -43,7 +43,7 @@ Output:
         [0, 4, 3, 1, 2, 5] means the task allocation order is T0 -> T4 -> T3 -> T1 -> T2 -> T5,
         where T0 is the first task.
 */
-inline std::tuple< std::vector<std::vector<int>>, std::vector<size_t> > Solve(
+inline void Solve(
     std::vector<int> &agent_position,
     std::vector<int> &targets_position,
     const size_t &population_size,

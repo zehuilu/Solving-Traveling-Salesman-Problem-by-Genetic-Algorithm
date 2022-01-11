@@ -85,6 +85,8 @@ paths, task_order, cost = TSP_GA_Solver.Solve(agent_position, targets_position,
 
 Run `example/run_Solve.py`, the result is shown below. Time used is 0.261 sec.
 Note: The obstacle map is generated randomly.
+
+
 ![Example](doc/example.png?raw=true "Example")
 
 

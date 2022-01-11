@@ -4,3 +4,4 @@
 /.vscode/*
 /build/*
 /externals/Lazy-Theta-with-optimization-any-angle-pathfinding/build/**
+/example/__pycache__/**

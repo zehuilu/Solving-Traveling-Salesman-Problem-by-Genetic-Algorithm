@@ -28,6 +28,8 @@ int main()
     // Number of Gene Iterations 
     const size_t gen_thres = 30;
     
+    constexpr bool PRINT_FLAG = true; // true to print during Genetic Algorithm
+
     std::vector<std::vector<float>> distance_matrix{
         { 0, 2, 100, 12, 5 },
         { 2, 0, 4, 8, 20 },
@@ -42,9 +44,14 @@ int main()
     //     { 3, 10, 2, 0, 13 },
     //     { 7, 4, LARGE_NUM, 13, 0 } };
 
-
-    Run(num_nodes, pop_size, gen_thres, distance_matrix);
+    // std::vector<int> and float
+    auto [index_route_vec, cost] = Run(num_nodes, pop_size, gen_thres, distance_matrix, PRINT_FLAG);
 
     time_duration = (std::clock() - time_start) / (double)CLOCKS_PER_SEC;
     std::cout << "Time used [sec]: " << time_duration << std::endl;
+
+    std::cout << "Task allocation and its cost\n";
+    std::cout << "0 is the initial position and 1 is the first task\n";
+    for (auto ele : index_route_vec) std::cout << ele << "->";
+    std::cout << "   " << cost << std::endl;
 }

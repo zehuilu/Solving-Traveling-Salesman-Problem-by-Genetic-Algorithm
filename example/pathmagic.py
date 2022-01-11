@@ -6,7 +6,7 @@ import sys
 class context:
     def __enter__(self):
         # assume the working directory is always the main directory
-        sys.path.append(os.getcwd() + '/externals/Lazy-Theta-with-optimization-any-angle-pathfinding/lib')
+        sys.path.append(os.getcwd() + '/externals/Lazy-Theta-with-optimization-any-angle-pathfinding/src')
         sys.path.append(os.getcwd() + '/build')
         sys.path.append(os.getcwd() + '/src')
 

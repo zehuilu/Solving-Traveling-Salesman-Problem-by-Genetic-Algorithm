@@ -8,11 +8,11 @@ I made some changes to eliminate some inefficient loops.
 
 
 #include <limits>
-#include <string>
 #include <vector>
 #include <iostream>
 #include <algorithm>
 #include <random>
+#include <tuple>
 #include <typeinfo>
 
 
@@ -24,10 +24,10 @@ std::uniform_real_distribution<float> dist_01(0.0, 1.0);  // uniform real distri
 
 
 // Structure of a GNOME 
-// string defines the path traversed by the salesman, and the fitness value of the path is stored in an integer 
+// vector defined the task execution order, and the fitness value is the cost of executing this order
 struct individual {
-    std::string gnome;
-    int fitness;
+    std::vector<int> gnome;
+    float fitness;
 };
 
 // generate a random integer number in [min, max]
@@ -57,60 +57,56 @@ inline void rand_integer_two(const std::vector<int>& idx_mutate_vector, int* ran
 }
 
 // Function to return a mutated GNOME 
-// Mutated GNOME is a string with a random interchange of two genes to create variation in species 
-inline std::string mutatedGene(std::string& gnome, const std::vector<int>& idx_mutate_vector)
+// Mutated GNOME is a std::vector<int> with a random interchange of two genes to create variation in species
+inline std::vector<int> mutatedGene(const std::vector<int>& gnome, const std::vector<int>& idx_mutate_vector)
 {
+    std::vector<int> gnome_new(gnome);
     int rand_num_array[2];
     rand_integer_two(idx_mutate_vector, rand_num_array);
-    std::swap(gnome[rand_num_array[0]], gnome[rand_num_array[1]]);
+    std::iter_swap(gnome_new.begin() + rand_num_array[0], gnome_new.begin() + rand_num_array[1]);
 
-    return gnome;
+    return gnome_new;
 }
 
-// Function to return a valid GNOME string 
+// Function to return a valid GNOME vector 
 // required to create the population 
-inline std::string create_gnome(const std::vector<int>& idx_mutate_vector)
+inline std::vector<int> create_gnome(const std::vector<int>& idx_mutate_vector)
 {
-    std::string gnome = "0";
+    std::vector<int> gnome(idx_mutate_vector.size()+1, 0);
     std::vector<int> idx_mutate_vector_copy(idx_mutate_vector);
 
-    while (idx_mutate_vector_copy.size() >= 1) {
+    for (size_t i = 1; i <= idx_mutate_vector.size(); ++i) {
         // generate a random index
         int idx_now = rand_integer(0, idx_mutate_vector_copy.size() - 1);
-        // slice the vector, convert the integer to string
-        gnome += (char)(idx_mutate_vector_copy[idx_now] + 48);
+        // slice the vector
+        gnome[i] = idx_mutate_vector_copy[idx_now];
         // erase the used one
         idx_mutate_vector_copy.erase(idx_mutate_vector_copy.begin() + idx_now);
     }
-
-    // comment this because don't need to come back
-    // // end with 0, the starting point
-    // gnome += gnome[0];
 
     return gnome;
 }
 
 // Function to return the fitness value of a gnome. 
 // The fitness value is the path length of the path represented by the GNOME. 
-inline float cal_fitness(const std::string& gnome, const std::vector<std::vector<float>>& distance_matrix)
+inline float compute_fitness(const std::vector<int>& gnome, const std::vector<std::vector<float>>& distance_matrix)
 {
     float f = 0;
-    for (unsigned int i = 0; i < gnome.size() - 1; i++) {
-        //std::cout << typeid(gnome[i] - 48).name() << std::endl; // int
-        //std::cout << typeid(gnome[i]).name() << std::endl; //char
-
-        if (distance_matrix[gnome[i] - 48][gnome[i + 1] - 48] >= LARGE_NUM)
+    for (size_t i = 0; i < gnome.size() - 1; i++) {
+        if (distance_matrix[gnome[i]][gnome[i + 1]] >= LARGE_NUM)
             return LARGE_NUM;
-        f += distance_matrix[gnome[i] - 48][gnome[i + 1] - 48];
+        f += distance_matrix[gnome[i]][gnome[i + 1]];
     }
     return f;
 }
 
 // Function to return the updated value of the cooling element. 
-inline float cooldown(const float& temp)
+inline float cooldown(const float& temperature, const size_t& iter, const size_t& max_iter, const float& temperature_init)
 {
-    return 0.9 * temp;
-    // return temp - 10;
+    // when the iteration is about 70% of max_iter, the temperature is designed to be less than 0.1 * temperature_init.
+    // then, decrease the temperature quickly such that there is more possibility to reject the bad gnome.
+    if (iter < 0.7 * max_iter) return temperature - (0.9 * temperature_init) / (0.7 * max_iter);
+    else return 0.9 * temperature;
 }
 
 // Comparator for GNOME struct. 
@@ -120,63 +116,67 @@ inline bool lessthan(const struct individual& t1, const struct individual& t2)
 }
 
 // Utility function for TSP problem. 
-inline void Run(
+inline std::tuple< std::vector<int>, float > Run(
     const size_t& num_nodes,
     const size_t& pop_size,
     const size_t& max_iter,
-    const std::vector<std::vector<float>>& distance_matrix)
+    const std::vector<std::vector<float>>& distance_matrix,
+    const bool& print_flag)
 {
     // Generation Number 
-    unsigned int iter = 1;
+    size_t iter = 0;
 
     /*
     !! Suppose we have 5(num_nodes) cities, the chromosome has 5 numbers, because we don't want to come back.
     But the first element won't mutate, so the mutateable numbers are num_nodes-1 = 4.
     In this case, the vector is [1, 2, 3, 4]
     */
-    std::vector<int> idx_mutate_vector(num_nodes-1);
+    std::vector<int> idx_mutate_vector(num_nodes - 1);
     std::iota(idx_mutate_vector.begin(), idx_mutate_vector.end(), 1);
 
-    std::vector<struct individual> population;
-    struct individual temp;
+    std::vector<struct individual> population(pop_size);
+    struct individual indiv_temp;
 
     // Populating the GNOME pool. 
-    for (unsigned int i = 0; i < pop_size; i++) {
-        temp.gnome = create_gnome(idx_mutate_vector);
-        temp.fitness = cal_fitness(temp.gnome, distance_matrix);
-        population.push_back(temp);
+    for (size_t i = 0; i < pop_size; i++) {
+        indiv_temp.gnome = create_gnome(idx_mutate_vector);
+        indiv_temp.fitness = compute_fitness(indiv_temp.gnome, distance_matrix);
+        population[i] = indiv_temp;
     }
 
     sort(population.begin(), population.end(), lessthan);
-    std::cout << "\nInitial population: " << std::endl << "GNOME     FITNESS VALUE\n";
-    for (unsigned int i = 0; i < pop_size; i++)
-        std::cout << population[i].gnome << "   "
-        << population[i].fitness << std::endl;
-    std::cout << "\n";
 
-    float temperature = 100;
+    if (print_flag) {
+        std::cout << "\nInitial population: " << std::endl << "GNOME     FITNESS VALUE\n";
+        for (size_t i = 0; i < pop_size; ++i) {
+            for (auto ele : population[i].gnome) std::cout << ele << "->";
+            std::cout << "   " << population[i].fitness << std::endl;
+        }
+        std::cout << "\n";
+    }
+
+    float temperature_init = 100;
+    float temperature = temperature_init;
 
     // Iteration to perform 
     // population crossing and gene mutation. 
-    while (temperature > 5 && iter <= max_iter) {
-        std::cout << "\nCurrent temp: " << temperature << "\n";
+    while (temperature > 0.1 && iter < max_iter) {
+        if (print_flag) std::cout << "\nCurrent temp: " << temperature << "\n";
 
-        std::vector<struct individual> new_population;
+        std::vector<struct individual> new_population(pop_size);
 
-        for (unsigned int i = 0; i < pop_size; i++) {
-            struct individual p1 = population[i];
+        for (size_t i = 0; i < pop_size; i++) {
 
             while (true) {
-                //std::string new_g = mutatedGene(p1.gnome, num_nodes);
-                std::string new_g = mutatedGene(p1.gnome, idx_mutate_vector);
+                std::vector<int> new_g = mutatedGene(population[i].gnome, idx_mutate_vector);
 
 
                 struct individual new_gnome;
                 new_gnome.gnome = new_g;
-                new_gnome.fitness = cal_fitness(new_gnome.gnome, distance_matrix);
+                new_gnome.fitness = compute_fitness(new_gnome.gnome, distance_matrix);
 
                 if (new_gnome.fitness <= population[i].fitness) {
-                    new_population.push_back(new_gnome);
+                    new_population[i] = new_gnome;
                     break;
                 }
                 else {
@@ -186,25 +186,32 @@ inline void Run(
                     // a possible probablity above threshold. 
                     float prob = pow(2.71828, -1*(new_gnome.fitness-population[i].fitness)/temperature);
                     if (random_prob < prob) {
-                        new_population.push_back(new_gnome);
+                        new_population[i] = new_gnome;
                         break;
                     }
                 }
             }
         }
 
-        temperature = cooldown(temperature);
+        // cooling down
+        temperature = cooldown(temperature, iter, max_iter, temperature_init);
+
         population = new_population;
         sort(population.begin(), population.end(), lessthan);
 
-        std::cout << "Generation " << iter << " \n";
-        std::cout << "GNOME     FITNESS VALUE\n";
-        for (unsigned int i = 0; i < pop_size; i++)
-            std::cout << population[i].gnome << "   "
-            << population[i].fitness << std::endl;
+        if (print_flag) {
+            std::cout << "Generation " << iter << " \n";
+            std::cout << "GNOME     FITNESS VALUE\n";
+            for (size_t i = 0; i < pop_size; ++i) {
+                for (auto ele : population[i].gnome) std::cout << ele << "->";
+                std::cout << "   " << population[i].fitness << std::endl;
+            }
+        }
 
         iter++;
     }
+
+    return {population[0].gnome, population[0].fitness};
 }
 
 #endif

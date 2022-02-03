@@ -26,8 +26,8 @@ Output:
         where T0 is the first task.
 */
 inline std::tuple< std::vector<std::vector<int>>, std::vector<size_t>, float > Solve(
-    std::vector<int> &agent_position,
-    std::vector<int> &targets_position,
+    const std::vector<int> &agent_position,
+    const std::vector<int> &targets_position,
     const size_t &population_size,
     const size_t &max_iter,
     const std::vector<int> &Map,
@@ -42,5 +42,4 @@ inline PYBIND11_MODULE(TSP_GA_Solver, module) {
     module.doc() = "Python wrapper of TSP_GA_Solver";
 
     module.def("Solve", &Solve, "Solve the traveling salesperson problem by GA algorithm");
-
 }

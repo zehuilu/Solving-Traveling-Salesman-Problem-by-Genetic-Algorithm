@@ -1,8 +1,3 @@
-/*
-Adapted from https://www.geeksforgeeks.org/traveling-salesman-problem-using-genetic-algorithm/
-I made some changes to eliminate some inefficient loops.
-*/
-
 #ifndef GA_SOLVER_HPP
 #define GA_SOLVER_HPP
 
@@ -17,7 +12,6 @@ I made some changes to eliminate some inefficient loops.
 
 
 static constexpr float LARGE_NUM = 1E8;
-
 std::random_device rd;     // only used once to initialise (seed) engine
 std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
 std::uniform_real_distribution<float> dist_01(0.0, 1.0);  // uniform real distribution [0.0, 1.0]
@@ -48,12 +42,7 @@ inline void rand_integer_two(const std::vector<int>& idx_mutate_vector, int* ran
     // if the random mumber is 4, the index of the original vector is 4-1=3.
     idx_mutate_vector_copy.erase(idx_mutate_vector_copy.begin() + rand_num_array[0] - 1);
 
-    // generate a random index for the new vector
-    //int index_2 = rand_integer(0, idx_mutate_vector_copy.size() - 1);
-
     rand_num_array[1] = idx_mutate_vector_copy[rand_integer(0, idx_mutate_vector_copy.size()-1)];
-
-    // return rand_num_array_ptr
 }
 
 // Function to return a mutated GNOME 
@@ -166,10 +155,8 @@ inline std::tuple< std::vector<int>, float > Run(
         std::vector<struct individual> new_population(pop_size);
 
         for (size_t i = 0; i < pop_size; i++) {
-
             while (true) {
                 std::vector<int> new_g = mutatedGene(population[i].gnome, idx_mutate_vector);
-
 
                 struct individual new_gnome;
                 new_gnome.gnome = new_g;
@@ -207,7 +194,6 @@ inline std::tuple< std::vector<int>, float > Run(
                 std::cout << "   " << population[i].fitness << std::endl;
             }
         }
-
         iter++;
     }
 

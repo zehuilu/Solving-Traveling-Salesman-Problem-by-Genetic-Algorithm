@@ -88,9 +88,3 @@ Note: The obstacle map is generated randomly.
 
 
 ![Example](doc/example.png?raw=true "Example")
-
-
-To-Do by Jan. 11, 2022
-======================
-1. Revise and add some comments in my codes
-

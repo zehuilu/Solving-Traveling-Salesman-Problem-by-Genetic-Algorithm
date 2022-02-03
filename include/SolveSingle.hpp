@@ -40,8 +40,8 @@ Output:
         where T0 is the first task.
 */
 inline std::tuple< std::vector<std::vector<int>>, std::vector<size_t>, float > SolveSingle(
-    std::vector<int> &agent_position,
-    std::vector<int> &targets_position,
+    const std::vector<int> &agent_position,
+    const std::vector<int> &targets_position,
     const size_t &population_size,
     const size_t &max_iter,
     const std::vector<int> &Map,
@@ -85,23 +85,23 @@ inline std::tuple< std::vector<std::vector<int>>, std::vector<size_t>, float > S
             goal[1] = agent_position[1];
         }
 
-        // doing the search, when infeasible, Path is empty, Distance = 0
-        // when start = goal, Path = start and Distance is empty
+        // doing the search, when infeasible, path is empty, distance = 0
+        // when start = goal, path = start and distance is empty
         // std::vector<int>, float
-        auto [Path, Distance] = pathfinder.search(start[1]*mapSizeX+start[0], goal[1]*mapSizeX+goal[0], mapSize);
+        auto [path, distance] = pathfinder.search(start[1]*mapSizeX+start[0], goal[1]*mapSizeX+goal[0], mapSize);
 
         // assign distance to distance matrix
         int i = num_nodes - 2 - floor(sqrt(-8*(idx/2) + 4*num_nodes*(num_nodes-1)-7)/2.0 - 0.5);
         int j = (idx/2) + i + 1 - (num_nodes*(num_nodes-1))/2 + ((num_nodes-i)*((num_nodes-i)-1))/2;
 
-        if (Path.size() > 2) {
-            distance_matrix[i][j] = Distance;
+        if (path.size() > 2) {
+            distance_matrix[i][j] = distance;
             distance_matrix[j][i] = distance_matrix[i][j];
         }
-        else if (Path.size() == 2) {
-            // when start = goal, let Path = {start, goal}, and Distance = 0
-            Path.push_back(Path[0]);
-            Path.push_back(Path[1]);
+        else if (path.size() == 2) {
+            // when start = goal, let path = {start, goal}, and distance = 0
+            path.push_back(path[0]);
+            path.push_back(path[1]);
             distance_matrix[i][j] = 0.0;
             distance_matrix[j][i] = distance_matrix[i][j];
         }
@@ -111,7 +111,7 @@ inline std::tuple< std::vector<std::vector<int>>, std::vector<size_t>, float > S
             distance_matrix[j][i] = distance_matrix[i][j];
         }
 
-        path_many.push_back(Path);
+        path_many.push_back(path);
         
         // Regenerate the neighbors for next run
         // if (idx < start_goal_pair.size()-1)
